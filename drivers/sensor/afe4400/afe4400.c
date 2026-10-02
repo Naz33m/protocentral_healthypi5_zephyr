@@ -134,7 +134,7 @@ static int afe4400_chip_init(const struct device *dev)
     _afe4400_reg_write(dev, CONTROL0, 0x000000);
     _afe4400_reg_write(dev, CONTROL0, 0x000008);
     _afe4400_reg_write(dev, TIAGAIN, 0x000000); // CF = 5pF, RF = 500kR
-    _afe4400_reg_write(dev, TIA_AMB_GAIN, 0x000001);
+    _afe4400_reg_write(dev, TIA_AMB_GAIN, 0x000002); // RF = 100k (was 250k): avoids ADC saturation with finger in probe
     _afe4400_reg_write(dev, LEDCNTRL, 0x001414);
     _afe4400_reg_write(dev, CONTROL2, 0x000000); // LED_RANGE=100mA, LED=50mA
     _afe4400_reg_write(dev, CONTROL1, 0x010707); // Timers ON, average 3 samples
