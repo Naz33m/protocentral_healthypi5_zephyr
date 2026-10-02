@@ -60,8 +60,8 @@ LOG_MODULE_REGISTER(spo2_process, LOG_LEVEL_INF);  // Changed from DBG to reduce
 // HealthyPi 5 can produce valid SpO2 readings with AC as low as 110
 // Real-world testing: AC=111-130 → SpO2=99% (valid)
 // Hysteresis prevents flickering when AC hovers near threshold
-#define PROBE_OFF_AC_LOW            70      // Below this = probe off (very strict, only true removal)
-#define PROBE_OFF_AC_HIGH           110     // Above this = probe on (very forgiving, accepts all working signals)
+#define PROBE_OFF_AC_LOW            6       // Below this = probe off (very strict, only true removal)
+#define PROBE_OFF_AC_HIGH           10      // Above this = probe on (very forgiving, accepts all working signals)
 
 // Shared buffers - exposed for memory efficiency
 uint32_t an_x[BUFFER_SIZE]; // IR buffer
@@ -574,7 +574,7 @@ void maxim_heart_rate_and_oxygen_saturation_with_quality(
     // Clinical: Normal PPG DC values are 50k-500k for AFE4400
     // Threshold 1000 is extremely conservative - probe must be completely off
     static uint32_t low_dc_warn_count = 0;
-    if (mean_ir < 1000 || mean_red < 1000) {
+    if (mean_ir < 50 || mean_red < 50) {  /* 14-bit data (AFE4400 driver keeps top 14 of 22 bits) */
         probe_off_detected = true;
         probe_off_reason = PROBE_OFF_LOW_DC;
         // Only log every 500th occurrence to reduce noise
@@ -591,7 +591,7 @@ void maxim_heart_rate_and_oxygen_saturation_with_quality(
     // Check 2: Signal Saturation (probe pressed too hard or light overflow)
     // AFE4400 has 22-bit ADC: max ~4.2M, use 3.8M as saturation threshold (90%)
     static uint32_t saturated_warn_count = 0;
-    if (mean_ir > 3800000 || mean_red > 3800000) {
+    if (mean_ir >= 8100 || mean_red >= 8100) {  /* 14-bit full scale is 8191 */
         probe_off_detected = true;
         probe_off_reason = PROBE_OFF_SATURATED;
         // Only log every 500th occurrence to reduce noise
@@ -607,7 +607,7 @@ void maxim_heart_rate_and_oxygen_saturation_with_quality(
     
     // Check 3: Weak signal (marginal contact - still process but flag low quality)
     // This doesn't immediately trigger probe-off, but contributes to confidence scoring
-    bool weak_signal = (mean_ir < 10000 || mean_red < 10000);
+    bool weak_signal = (mean_ir < 500 || mean_red < 500);
     if (weak_signal) {
         LOG_DBG("Weak signal detected: IR=%d, Red=%d", mean_ir, mean_red);
     }
